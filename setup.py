@@ -6,11 +6,11 @@ from distutils.core import setup
 files = ["things/*"]
 
 setup(name="lshash",
-      version="1.0",
+      version="1.1-dev",
       description="lshash for py3",
-      author="xuantang",
-      author_email="xuantang.cun@gmail.com",
-      url="http://wzescxt.com",
+      author="smovva",
+      author_email="sunil.movva@gmail.com",
+      url="",
       # Name the folder where your packages live:
       # (If you have other packages (dirs) or modules (py files) then
       # put them into the package directory - they will be found

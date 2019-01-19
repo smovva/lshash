@@ -143,6 +143,33 @@ class LSHash(object):
         else:
             return "".join(['1' if i > 0 else '0' for i in projections])
 
+    def _hash_bulk(self, planes, input_points):
+        """ Generates binary hashes for `input_points` and returns a list.
+
+        :param planes:
+            The planes are random uniform planes with a dimension of
+            `hash_size` * `input_dim`.
+        :param input_point:
+            A Python tuple or list object that contains only numbers.
+            The dimension needs to be 1 * `input_dim`.
+        """
+
+        try:
+            projections = np.matmul(input_points, planes.T)
+        except TypeError as e:
+            print("""The input point needs to be an array-like object with
+                   numbers only elements""")
+            raise
+        except ValueError as e:
+            print("""The input point needs to be of the same dimension as
+                   `input_dim` when initializing this LSHash instance""", e)
+            raise
+        else:
+            result = []
+            for i in range(len(projections)):
+                result.append("".join(['1' if x > 0 else '0' for x in projections[i, : ]]))
+            return result
+
     def _as_np_array(self, json_or_tuple):
         """ Takes either a JSON-serialized data structure or a tuple that has
         the original input points stored, and returns the original input point
@@ -201,7 +228,7 @@ class LSHash(object):
             dim = np.array(input_point).ndim
 
         if extra_data:
-            value = (tuple(input_point), extra_data)
+            value = extra_data  # Changing this to avoid storing the vector.
         else:
             value = tuple(input_point)
 
@@ -214,6 +241,45 @@ class LSHash(object):
             for i, table in enumerate(self.hash_tables):
                 table.append_val(self._hash(self.uniform_planes[i], input_point),
                                  value)
+
+    def index_bulk(self, input_points, extra_data):
+        """ Index a single input point by adding it to the selected storage.
+
+        If `extra_data` is provided, it will become the value of the dictionary
+        {input_point: extra_data}, which in turn will become the value of the
+        hash table. `extra_data` needs to be JSON serializable if in-memory
+        dict is not used as storage.
+
+        :param input_points:
+            A 2 dimensional numpy ndarray object that contains numbers
+            only.
+        :param extra_data:
+            Needs to be a list of JSON-serializable objects: list, dicts and
+            basic types such as strings and integers.
+        """
+
+        if isinstance(input_points, list):
+            input_matrix = np.array(input_points)
+        elif isinstance(input_points, np.ndarray):
+            input_matrix = input_points
+        else:
+            raise Exception("input_points should be ndarray")
+
+        if not isinstance(extra_data, list):
+            raise Exception("extra_data should be a list")
+
+        dim = input_matrix.ndim
+        shape = input_matrix.shape
+
+        if (dim != 2) or (shape[1] != input_dim):
+            raise Exception("input_points dimensions don't match")
+        if len(extra_data) != shape[0]:
+            raise Exception("extra_data dimensions don't match")
+
+        for i, table in enumerate(self.hash_tables):
+            hashes = self._hash_bulk(self.uniform_planes[i], input_matrix)
+            for j in range (len(extra_data)):
+                table.append_val(hashes[j], extra_data[j])
 
     def query(self, query_point, num_results=None, distance_func=None):
         """ Takes `query_point` which is either a tuple or a list of numbers,
@@ -274,9 +340,9 @@ class LSHash(object):
                 candidates.update(table.get_list(binary_hash))
 
         # rank candidates by distance function
-        candidates = [(ix, d_func(query_point, self._as_np_array(ix)))
-                      for ix in candidates]
-        candidates.sort(key=lambda x: x[1])
+        #candidates = [(ix, d_func(query_point, self._as_np_array(ix)))
+        #              for ix in candidates]
+        #candidates.sort(key=lambda x: x[1])
 
         return candidates[:num_results] if num_results else candidates
 
