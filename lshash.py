@@ -165,9 +165,9 @@ class LSHash(object):
                    `input_dim` when initializing this LSHash instance""", e)
             raise
         else:
-            result = []
-            for i in range(len(projections)):
-                result.append("".join(['1' if x > 0 else '0' for x in projections[i, : ]]))
+            #result = []
+            #for i in range(len(projections)):
+            #    result.append("".join(['1' if x > 0 else '0' for x in projections[i, : ]]))
             return ["".join(['1' if x > 0 else '0' for x in y]) for y in projections]
 
     def _as_np_array(self, json_or_tuple):
