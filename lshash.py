@@ -168,7 +168,7 @@ class LSHash(object):
             result = []
             for i in range(len(projections)):
                 result.append("".join(['1' if x > 0 else '0' for x in projections[i, : ]]))
-            return result
+            return ["".join(['1' if x > 0 else '0' for x in y]) for y in projections]
 
     def _as_np_array(self, json_or_tuple):
         """ Takes either a JSON-serialized data structure or a tuple that has
@@ -271,14 +271,14 @@ class LSHash(object):
         dim = input_matrix.ndim
         shape = input_matrix.shape
 
-        if (dim != 2) or (shape[1] != input_dim):
+        if (dim != 2) or (shape[1] != self.input_dim):
             raise Exception("input_points dimensions don't match")
         if len(extra_data) != shape[0]:
             raise Exception("extra_data dimensions don't match")
 
         for i, table in enumerate(self.hash_tables):
             hashes = self._hash_bulk(self.uniform_planes[i], input_matrix)
-            for j in range (len(extra_data)):
+            for j in range(len(extra_data)):
                 table.append_val(hashes[j], extra_data[j])
 
     def query(self, query_point, num_results=None, distance_func=None):
